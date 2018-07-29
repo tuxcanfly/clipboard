@@ -125,7 +125,7 @@ func monitorAll(text chan<- string, quit <-chan struct{}) error {
 			if ev.Atom != atomReply.Atom {
 				return
 			}
-			fmt.Printf("PropertyNotifyEvent: %d %s\n", ev.Atom, ev.String())
+			fmt.Println("changed")
 		}).Connect(X, X.RootWin())
 
 	xevent.Main(X)
