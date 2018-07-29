@@ -8,6 +8,7 @@ package clipboard
 
 import (
 	"errors"
+	"fmt"
 	"os/exec"
 )
 
@@ -95,4 +96,29 @@ func writeAll(text string) error {
 		return err
 	}
 	return copyCmd.Wait()
+}
+
+func monitorAll(text chan<- string, quit <-chan struct{}) error {
+	X, err := xgb.NewConn()
+	if err != nil {
+		return err
+	}
+
+	// Start the main event loop.
+	for {
+		// WaitForEvent either returns an event or an error and never both.
+		// If both are nil, then something went wrong and the loop should be
+		// halted.
+		//
+		// An error can only be seen here as a response to an unchecked
+		// request.
+		ev, err := X.WaitForEvent()
+		if ev == nil && err == nil {
+			return err
+		}
+
+		if ev != nil {
+			fmt.Printf("Event: %s\n", ev)
+		}
+	}
 }
