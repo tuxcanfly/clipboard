@@ -8,7 +8,14 @@ package clipboard
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"os/exec"
+
+	"github.com/BurntSushi/xgb/xproto"
+	"github.com/BurntSushi/xgbutil"
+	"github.com/BurntSushi/xgbutil/xevent"
+	"github.com/BurntSushi/xgbutil/xwindow"
 )
 
 const (
@@ -95,4 +102,32 @@ func writeAll(text string) error {
 		return err
 	}
 	return copyCmd.Wait()
+}
+
+func monitorAll(text chan<- string, quit <-chan struct{}) error {
+	X, err := xgbutil.NewConn()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	xwindow.New(X, X.RootWin()).Listen(xproto.EventMaskPropertyChange)
+
+	atomCookie := xproto.InternAtom(X.Conn(), true, 14, "CLIP_TEMPORARY")
+	var atomReply *xproto.InternAtomReply
+	atomReply, err = atomCookie.Reply()
+	if err != nil {
+		return err
+	}
+
+	// Respond to those X events.
+	xevent.PropertyNotifyFun(
+		func(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
+			if ev.Atom != atomReply.Atom {
+				return
+			}
+			fmt.Printf("PropertyNotifyEvent: %d %s\n", ev.Atom, ev.String())
+		}).Connect(X, X.RootWin())
+
+	xevent.Main(X)
+	return nil
 }
