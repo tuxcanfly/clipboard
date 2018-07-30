@@ -8,7 +8,6 @@ package clipboard
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os/exec"
 	"time"
@@ -129,7 +128,6 @@ func monitorAll(text chan<- string, quit <-chan struct{}) error {
 		for {
 			select {
 			case ev := <-events:
-				fmt.Println(uint32(ev.Time) - last)
 				if uint32(ev.Time)-last > 100 {
 					copy, err := readAll()
 					if err != nil {
